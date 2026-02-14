@@ -55,7 +55,7 @@ export type GeneratePlanRequest = {
   onboarding: OnboardingData;
   medications?: MedicationData[];
   currentTime: string; // HH:mm
-  incident?: "Fever spike" | "Threw up" | "Energy crashed" | "Feeling better" | "Won't eat/drink";
+  incident?: IncidentType;
   incidentDescription?: string;
   existingPlan?: PlanItem[];
 };

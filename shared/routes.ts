@@ -31,7 +31,10 @@ export const api = {
         incident: z.enum(["Fever spike", "Threw up", "Energy crashed", "Feeling better", "Won't eat/drink"]).optional(),
         incidentDescription: z.string().optional(),
         existingPlan: z.array(planItemSchema).optional(),
-      }),
+      }).refine(
+        (data) => !data.incidentDescription || data.incidentDescription.trim().length > 0,
+        { message: "Incident description cannot be empty whitespace", path: ["incidentDescription"] }
+      ),
       responses: {
         200: z.array(planItemSchema),
         400: errorSchemas.validation,

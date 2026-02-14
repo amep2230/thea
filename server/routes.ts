@@ -8,8 +8,52 @@ import {
   PlanItem, 
   ILLNESS_TYPES, 
   ENERGY_LEVELS,
+  INCIDENT_TYPES,
+  IncidentType,
 } from "@shared/schema";
 import { randomUUID } from "crypto";
+
+const INCIDENT_PATTERNS: { incident: IncidentType; keywords: string[] }[] = [
+  {
+    incident: "Fever spike",
+    keywords: ["fever", "temperature", "hot", "burning up", "thermometer", "degrees", "temp spike", "high temp"],
+  },
+  {
+    incident: "Threw up",
+    keywords: ["threw up", "vomit", "vomiting", "throw up", "throwing up", "puked", "puke", "sick to stomach", "nauseous", "nausea"],
+  },
+  {
+    incident: "Energy crashed",
+    keywords: ["tired", "exhausted", "no energy", "energy crashed", "crash", "lethargic", "sleepy", "can't move", "wiped out", "sluggish", "drained"],
+  },
+  {
+    incident: "Feeling better",
+    keywords: ["feeling better", "better now", "improved", "getting better", "perked up", "more energy", "seems good", "doing well", "bouncing back", "recovering"],
+  },
+  {
+    incident: "Won't eat/drink",
+    keywords: ["won't eat", "won't drink", "not eating", "not drinking", "refuses food", "refuses water", "no appetite", "can't eat", "doesn't want food"],
+  },
+];
+
+function detectIncidentFromText(text: string): IncidentType | null {
+  const lower = text.toLowerCase();
+  let bestMatch: { incident: IncidentType; score: number } | null = null;
+
+  for (const pattern of INCIDENT_PATTERNS) {
+    let score = 0;
+    for (const keyword of pattern.keywords) {
+      if (lower.includes(keyword)) {
+        score += keyword.split(" ").length;
+      }
+    }
+    if (score > 0 && (!bestMatch || score > bestMatch.score)) {
+      bestMatch = { incident: pattern.incident, score };
+    }
+  }
+
+  return bestMatch?.incident ?? null;
+}
 
 function addMinutes(time: string, minutes: number): string {
   const [h, m] = time.split(':').map(Number);
@@ -26,7 +70,7 @@ function timeDiff(time1: string, time2: string): number {
 }
 
 function generatePlanLocal(input: GeneratePlanRequest): PlanItem[] {
-  const { onboarding, medications, currentTime, incident } = input;
+  const { onboarding, medications, currentTime, incident, incidentDescription } = input;
   const plan: PlanItem[] = [];
   
   const currentHour = parseInt(currentTime.split(':')[0]);
@@ -37,6 +81,12 @@ function generatePlanLocal(input: GeneratePlanRequest): PlanItem[] {
   let isGentleMode = false;
   if (incident === "Fever spike" || incident === "Threw up" || incident === "Energy crashed" || incident === "Won't eat/drink") {
     isGentleMode = true;
+  }
+  if (!incident && incidentDescription) {
+    const detected = detectIncidentFromText(incidentDescription);
+    if (detected && detected !== "Feeling better") {
+      isGentleMode = true;
+    }
   }
   
   const childEnergy = isGentleMode ? "Low" : onboarding.childEnergyLevel;
@@ -217,13 +267,13 @@ PARENT ENERGY: ${onboarding.parentEnergyLevel}
 MEDICATIONS: ${medicationSummary}
 CURRENT TIME: ${currentTime}
 
-INCIDENT TYPE: ${incident}
+${incident ? `INCIDENT TYPE: ${incident}` : 'INCIDENT TYPE: Not specified (infer from description below)'}
 ${incidentDescription ? `PARENT'S DESCRIPTION: "${incidentDescription}"` : ''}
 
 CURRENT PLAN (pending items):
 ${existingPlanSummary}
 
-Based on this incident, generate an updated care plan for the rest of the day. Adjust activities to be appropriate given what just happened. If the child's condition worsened, make the plan gentler with more rest. If they're feeling better, allow slightly more active things.
+Based on this update from the parent, generate an updated care plan for the rest of the day. Use the parent's description to understand what happened and adjust activities accordingly. If the child's condition worsened, make the plan gentler with more rest. If they're feeling better, allow slightly more active things. Even if no specific incident category was selected, use the description to guide your plan adjustments.
 
 Respond with ONLY a JSON array like:
 [{"type":"rest","title":"...","description":"...","time":"HH:mm","tags":["..."],"isGentle":true}]`;
@@ -306,7 +356,16 @@ export async function registerRoutes(
       
       let plan: PlanItem[];
       
-      if (input.incident) {
+      const hasIncident = !!input.incident;
+      const hasDescription = !!input.incidentDescription?.trim();
+      
+      if (hasIncident || hasDescription) {
+        if (!input.incident && hasDescription) {
+          const detected = detectIncidentFromText(input.incidentDescription!);
+          if (detected) {
+            input.incident = detected;
+          }
+        }
         plan = await modifyPlanWithAI(input);
       } else {
         plan = generatePlanLocal(input);
