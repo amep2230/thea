@@ -8,6 +8,8 @@ import Splash from "@/pages/Splash";
 import Onboarding from "@/pages/OnboardingNew";
 import Medications from "@/pages/Medications";
 import DayPlan from "@/pages/DayPlan";
+import Profile from "@/pages/Profile";
+import Information from "@/pages/Information";
 import { useEffect } from "react";
 
 function Router() {
@@ -26,6 +28,8 @@ function Router() {
       <Route path="/onboarding" component={Onboarding} />
       <Route path="/medications" component={Medications} />
       <Route path="/plan" component={DayPlan} />
+      <Route path="/profile" component={Profile} />
+      <Route path="/information" component={Information} />
       <Route component={NotFound} />
     </Switch>
   );

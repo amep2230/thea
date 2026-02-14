@@ -11,6 +11,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import { AlertCircle, PartyPopper, Thermometer, BatteryLow, Smile, Frown, Mic, MicOff, Loader2, Sparkles, Utensils, Send, Bell, BellOff } from "lucide-react";
 import type { PlanResponse, IncidentType } from "@shared/schema";
+import { getOrCreateToday, savePlanForToday, addIncidentToday } from "@/lib/incident-history";
 
 const INCIDENT_PATTERNS: { incident: IncidentType; keywords: string[] }[] = [
   { incident: "Fever spike", keywords: ["fever", "temperature", "hot", "burning up", "thermometer", "degrees", "high temp"] },
@@ -101,6 +102,8 @@ export default function DayPlan() {
       const onboarding = JSON.parse(onboardingStr);
       const medications = medicationsStr ? JSON.parse(medicationsStr) : [];
       
+      getOrCreateToday(onboarding, medications);
+      
       try {
         const data = await generatePlan({
           onboarding,
@@ -108,6 +111,7 @@ export default function DayPlan() {
           currentTime: new Date().toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' })
         });
         setPlan(data);
+        savePlanForToday(data);
       } catch (error) {
         console.error("Failed to generate plan", error);
       } finally {
@@ -119,7 +123,9 @@ export default function DayPlan() {
   }, [generatePlan, setLocation]);
 
   const handleUpdateItem = async (id: string, status: "completed" | "skipped") => {
-    setPlan(prev => prev ? prev.map(item => item.id === id ? { ...item, status } : item) : null);
+    const updatedPlan = plan ? plan.map(item => item.id === id ? { ...item, status } : item) : null;
+    setPlan(updatedPlan);
+    if (updatedPlan) savePlanForToday(updatedPlan);
     
     try {
       await updateItem({ id, status });
@@ -142,6 +148,8 @@ export default function DayPlan() {
       const onboarding = JSON.parse(onboardingStr);
       const medications = medicationsStr ? JSON.parse(medicationsStr) : [];
       
+      addIncidentToday(incident, descriptionToSend);
+      
       const data = await generatePlan({
         onboarding,
         medications,
@@ -152,6 +160,7 @@ export default function DayPlan() {
       });
       clearFired();
       setPlan(data);
+      savePlanForToday(data);
       setLoading(false);
     }
   };
@@ -195,7 +204,7 @@ export default function DayPlan() {
   }
 
   return (
-    <Layout title="Today's Care Plan" showBack backTo="/medications">
+    <Layout title="Today's Care Plan" showBack backTo="/medications" showMenu>
       <div className="space-y-4 relative">
         <div className="flex items-center justify-between flex-wrap gap-2 mb-2">
           <p data-testid="text-plan-date" className="text-muted-foreground text-sm">

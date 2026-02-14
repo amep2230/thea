@@ -1,7 +1,8 @@
-import { ReactNode } from "react";
-import { Link } from "wouter";
-import { ArrowLeft, Stethoscope } from "lucide-react";
+import { ReactNode, useState } from "react";
+import { Link, useLocation } from "wouter";
+import { ArrowLeft, Menu, User, BookOpen } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 
 interface LayoutProps {
   children: ReactNode;
@@ -9,9 +10,18 @@ interface LayoutProps {
   showBack?: boolean;
   backTo?: string;
   hideHeader?: boolean;
+  showMenu?: boolean;
 }
 
-export function Layout({ children, title, showBack, backTo, hideHeader }: LayoutProps) {
+export function Layout({ children, title, showBack, backTo, hideHeader, showMenu }: LayoutProps) {
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [, setLocation] = useLocation();
+
+  const navigateTo = (path: string) => {
+    setMenuOpen(false);
+    setLocation(path);
+  };
+
   return (
     <div className="min-h-screen bg-background safe-bottom">
       {!hideHeader && (
@@ -29,10 +39,15 @@ export function Layout({ children, title, showBack, backTo, hideHeader }: Layout
                 {title || "Thea"}
               </h1>
             </div>
-            {!title && (
-              <div className="w-8 h-8 rounded-full bg-sage-100 flex items-center justify-center text-sage-500">
-                <Stethoscope className="w-5 h-5" />
-              </div>
+            {showMenu && (
+              <Button
+                data-testid="button-hamburger-menu"
+                size="icon"
+                variant="ghost"
+                onClick={() => setMenuOpen(true)}
+              >
+                <Menu className="w-5 h-5" />
+              </Button>
             )}
           </div>
         </header>
@@ -40,6 +55,34 @@ export function Layout({ children, title, showBack, backTo, hideHeader }: Layout
       <main className="max-w-md mx-auto p-4 md:p-6 pb-24">
         {children}
       </main>
+
+      <Sheet open={menuOpen} onOpenChange={setMenuOpen}>
+        <SheetContent side="right" className="w-72 p-0">
+          <SheetHeader className="p-6 pb-4 border-b border-border">
+            <SheetTitle className="text-lg font-display text-left">Menu</SheetTitle>
+          </SheetHeader>
+          <nav className="p-3 space-y-1">
+            <Button
+              data-testid="menu-link-profile"
+              variant="ghost"
+              className="w-full justify-start gap-3"
+              onClick={() => navigateTo("/profile")}
+            >
+              <User className="w-4 h-4" />
+              Profile
+            </Button>
+            <Button
+              data-testid="menu-link-information"
+              variant="ghost"
+              className="w-full justify-start gap-3"
+              onClick={() => navigateTo("/information")}
+            >
+              <BookOpen className="w-4 h-4" />
+              Information & Sources
+            </Button>
+          </nav>
+        </SheetContent>
+      </Sheet>
     </div>
   );
 }

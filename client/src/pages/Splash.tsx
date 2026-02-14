@@ -1,20 +1,16 @@
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
-import { Heart, ShieldCheck } from "lucide-react";
+import { ShieldCheck } from "lucide-react";
 
 export default function Splash() {
   const [, setLocation] = useLocation();
 
   return (
-    <div className="min-h-screen bg-background flex flex-col items-center justify-between px-6 py-12 safe-bottom">
+    <div className="min-h-screen bg-background flex flex-col items-center justify-between p-6 safe-bottom">
       <div className="flex-1 flex flex-col items-center justify-center max-w-sm w-full">
-        <div className="flex items-center justify-center w-20 h-20 rounded-full bg-primary/10 mb-6">
-          <Heart className="w-10 h-10 text-primary" />
-        </div>
-
         <h1
           data-testid="text-splash-logo"
-          className="font-display text-5xl text-foreground tracking-tight mb-4"
+          className="font-display text-5xl text-foreground tracking-tight mb-6"
         >
           thea
         </h1>
@@ -39,10 +35,10 @@ export default function Splash() {
 
         <div
           data-testid="text-splash-disclaimer"
-          className="flex items-start gap-2.5 text-xs text-muted-foreground/70 text-center leading-relaxed"
+          className="w-full rounded-md bg-blue-50 dark:bg-blue-950/30 p-4 flex items-start gap-6"
         >
-          <ShieldCheck className="w-4 h-4 shrink-0 mt-0.5" />
-          <span>
+          <ShieldCheck className="w-5 h-5 shrink-0 mt-0.5 text-blue-700 dark:text-blue-300" />
+          <span className="text-xs text-blue-800 dark:text-blue-200 leading-relaxed">
             All information and suggestions are provided based on the American Pediatric Association guidelines.
           </span>
         </div>
