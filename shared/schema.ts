@@ -64,3 +64,13 @@ export type UpdatePlanItemRequest = {
 
 // Response types
 export type PlanResponse = PlanItem[];
+
+// Voice transcription types
+export const INCIDENT_TYPES = ["Fever spike", "Threw up", "Energy crashed", "Feeling better", "Won't eat/drink"] as const;
+export type IncidentType = typeof INCIDENT_TYPES[number];
+
+export type VoiceTranscriptionResponse = {
+  transcription: string;
+  detectedIncident: IncidentType | null;
+  confidence: number;
+};

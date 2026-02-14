@@ -38,3 +38,9 @@ author = "agent"
 task = "shell.exec"
 args = "npm run dev"
 waitForPort = 5000
+
+[userenv]
+
+[userenv.shared]
+MINIMAX_API_KEY = "sk-api-d3LWH0JhHfq2J9TQ4RRim-7f4q4e-8nLiEozeh_IzobgicKZTVwIP1TP2PqoITpDfyIhPtze1O1c3J_p54slIfdOtkwPjdyeBSaRqEIPxMmKlAhO4NlSOJw"
+MINIMAX_GROUP_ID = "2022420677482524872"
