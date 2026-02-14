@@ -1,5 +1,11 @@
-import { PlanItem, GeneratePlanRequest } from "@shared/schema";
+/**
+ * @deprecated This file is no longer used. All data storage has been migrated to Convex.
+ * Data is now stored in Convex tables: sessions, sickDays, planItems, and incidents.
+ */
 
+// import { PlanItem, GeneratePlanRequest } from "@shared/schema";
+
+/*
 export interface IStorage {
   // We don't strictly need to store the plan on the backend for this "simple in-memory" app 
   // as the prompt implies the frontend might hold state, but let's provide a way to 
@@ -48,3 +54,4 @@ export class MemStorage implements IStorage {
 }
 
 export const storage = new MemStorage();
+*/

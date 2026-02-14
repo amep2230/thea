@@ -1,17 +1,23 @@
-import type { Express } from "express";
-import type { Server } from "http";
-import { storage } from "./storage";
-import { api, errorSchemas } from "@shared/routes";
-import { z } from "zod";
-import { 
-  GeneratePlanRequest, 
-  PlanItem, 
-  ILLNESS_TYPES, 
-  ENERGY_LEVELS,
-  INCIDENT_TYPES,
-  IncidentType,
-} from "@shared/schema";
-import { randomUUID } from "crypto";
+/**
+ * @deprecated This file is no longer used. All data operations have been migrated to Convex.
+ * The plan generation logic has been moved to convex/actions.ts
+ * API routes are no longer needed as the frontend uses Convex hooks directly.
+ */
+
+// import type { Express } from "express";
+// import type { Server } from "http";
+// import { storage } from "./storage";
+// import { api, errorSchemas } from "@shared/routes";
+// import { z } from "zod";
+// import { 
+//   GeneratePlanRequest, 
+//   PlanItem, 
+//   ILLNESS_TYPES, 
+//   ENERGY_LEVELS,
+//   INCIDENT_TYPES,
+//   IncidentType,
+// } from "@shared/schema";
+// import { randomUUID } from "crypto";
 
 const INCIDENT_PATTERNS: { incident: IncidentType; keywords: string[] }[] = [
   {
@@ -345,6 +351,8 @@ Respond with ONLY a JSON array like:
 }
 
 
+// All API routes have been migrated to Convex - this function is no longer called
+/*
 export async function registerRoutes(
   httpServer: Server,
   app: Express
@@ -411,3 +419,4 @@ export async function registerRoutes(
 
   return httpServer;
 }
+*/

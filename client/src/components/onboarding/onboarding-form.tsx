@@ -11,9 +11,11 @@ import { StepChildAge } from "./step-child-age"
 import { StepIllnessType } from "./step-illness-type"
 import { StepChildEnergy } from "./step-child-energy"
 import { StepParentEnergy } from "./step-parent-energy"
+import { StepMedications } from "./step-medications"
 import { StepComplete } from "./step-complete"
+import type { MedicationData } from "@shared/schema"
 
-const TOTAL_STEPS = 5
+const TOTAL_STEPS = 6
 
 const ILLNESS_ID_TO_LABEL: Record<string, string> = {
   "cold": "Cold",
@@ -42,6 +44,7 @@ interface FormData {
   illnessTypes: string[]
   childEnergy: string | null
   parentEnergy: string | null
+  medications: MedicationData[]
 }
 
 export function OnboardingForm() {
@@ -55,6 +58,7 @@ export function OnboardingForm() {
     illnessTypes: [],
     childEnergy: null,
     parentEnergy: null,
+    medications: [],
   })
 
   const canProceed = useCallback(() => {
@@ -69,6 +73,8 @@ export function OnboardingForm() {
         return formData.childEnergy !== null
       case 5:
         return formData.parentEnergy !== null
+      case 6:
+        return true // Medications are optional, can always proceed
       default:
         return false
     }
@@ -85,9 +91,9 @@ export function OnboardingForm() {
     await saveSession({
       deviceId: getDeviceId(),
       ...onboardingData,
-      medications: [],
+      medications: formData.medications,
     })
-    setLocation("/medications")
+    setLocation("/plan")
   }
 
   const goNext = () => {
@@ -191,6 +197,13 @@ export function OnboardingForm() {
               onChange={(v) => setFormData((d) => ({ ...d, parentEnergy: v }))}
             />
           )}
+          {step === 6 && (
+            <StepMedications
+              value={formData.medications}
+              onChange={(v) => setFormData((d) => ({ ...d, medications: v }))}
+              childName={formData.childName}
+            />
+          )}
           {isComplete && <StepComplete childName={formData.childName} />}
         </div>
 
@@ -209,7 +222,7 @@ export function OnboardingForm() {
                   : "bg-[#EEEDEA] text-[#B0B8C4] cursor-not-allowed"
               )}
             >
-              {step === TOTAL_STEPS ? "Generate Day Plan" : "Continue"}
+              {step === TOTAL_STEPS ? "Complete" : "Continue"}
             </button>
           ) : (
             <button

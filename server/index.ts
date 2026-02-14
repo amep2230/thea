@@ -46,6 +46,10 @@ export function log(message: string, source = "express") {
     return res.status(status).json({ message });
   });
 
+  // API routes removed - all data operations now go through Convex
+  // const { registerRoutes } = await import("./routes");
+  // await registerRoutes(httpServer, app);
+
   if (process.env.NODE_ENV === "production") {
     serveStatic(app);
   } else {
@@ -54,14 +58,7 @@ export function log(message: string, source = "express") {
   }
 
   const port = parseInt(process.env.PORT || "5000", 10);
-  httpServer.listen(
-    {
-      port,
-      host: "0.0.0.0",
-      reusePort: true,
-    },
-    () => {
-      log(`serving on port ${port}`);
-    },
-  );
+  httpServer.listen(port, "0.0.0.0", () => {
+    log(`serving on port ${port}`);
+  });
 })();

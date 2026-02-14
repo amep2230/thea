@@ -1,12 +1,41 @@
 "use client"
 
+import { useState, useEffect } from "react"
+import { Loader2 } from "lucide-react"
+
 interface StepCompleteProps {
   childName: string
 }
 
 export function StepComplete({ childName }: StepCompleteProps) {
+  const [isLoading, setIsLoading] = useState(true)
+
+  useEffect(() => {
+    // Show loading state for 1.5 seconds before showing completion message
+    const timer = setTimeout(() => {
+      setIsLoading(false)
+    }, 1500)
+
+    return () => clearTimeout(timer)
+  }, [])
+
+  if (isLoading) {
+    return (
+      <div className="flex flex-col items-center gap-6 py-10 text-center">
+        <div className="flex h-14 w-14 items-center justify-center rounded-full bg-[#F2F7F2]">
+          <Loader2 className="h-7 w-7 text-[#7A9E78] animate-spin" />
+        </div>
+        <div className="flex flex-col gap-2">
+          <p className="text-[15px] leading-[22px] text-[#4A5568]">
+            {"Setting everything up..."}
+          </p>
+        </div>
+      </div>
+    )
+  }
+
   return (
-    <div className="flex flex-col items-center gap-6 py-10 text-center">
+    <div className="flex flex-col items-center gap-6 py-10 text-center animate-in fade-in duration-500">
       <div className="flex h-14 w-14 items-center justify-center rounded-full bg-[#F2F7F2]">
         <svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
           <path d="M20 6L9 17L4 12" stroke="#7A9E78" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
