@@ -36,4 +36,6 @@ app.use((err, _req, res, _next) => {
 });
 
 // Vercel serverless function handler - must be default export
+// Ce fichier sert de pont pour Vercel
+const app = require('../dist/index.cjs'); 
 module.exports = app;
