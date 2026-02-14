@@ -1,6 +1,8 @@
 import { useEffect, useState, useCallback, useRef } from "react";
 import { useLocation } from "wouter";
-import { useGeneratePlan, useUpdatePlanItem } from "@/hooks/use-plan";
+import { useQuery, useMutation, useAction } from "convex/react";
+import { api } from "../../../convex/_generated/api";
+import { getDeviceId, todayDate } from "@/lib/device-id";
 import { useVoiceRecorder } from "@/hooks/use-voice-recorder";
 import { useMedicationNotifications } from "@/hooks/use-medication-notifications";
 import { Layout } from "@/components/Layout";
@@ -10,8 +12,7 @@ import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTr
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import { AlertCircle, PartyPopper, Thermometer, BatteryLow, Smile, Frown, Mic, MicOff, Loader2, Sparkles, Utensils, Send, Bell, BellOff } from "lucide-react";
-import type { PlanResponse, IncidentType } from "@shared/schema";
-import { getOrCreateToday, savePlanForToday, addIncidentToday } from "@/lib/incident-history";
+import type { IncidentType } from "@shared/schema";
 
 const INCIDENT_PATTERNS: { incident: IncidentType; keywords: string[] }[] = [
   { incident: "Fever spike", keywords: ["fever", "temperature", "hot", "burning up", "thermometer", "degrees", "high temp"] },
@@ -46,10 +47,18 @@ const INCIDENT_OPTIONS: { type: IncidentType; label: string; icon: any; colorCla
 
 export default function DayPlan() {
   const [, setLocation] = useLocation();
-  const [plan, setPlan] = useState<PlanResponse | null>(null);
+  const deviceId = getDeviceId();
+  const date = todayDate();
+
+  const session = useQuery(api.queries.getSession, { deviceId });
+  const planItems = useQuery(api.queries.getCurrentPlan, { deviceId, date });
+
+  const generatePlanAction = useAction(api.actions.generatePlan);
+  const updatePlanItemMutation = useMutation(api.mutations.updatePlanItem);
+  const addIncidentMutation = useMutation(api.mutations.addIncident);
+
   const [loading, setLoading] = useState(true);
-  const { mutateAsync: generatePlan } = useGeneratePlan();
-  const { mutateAsync: updateItem } = useUpdatePlanItem();
+  const [planGenerated, setPlanGenerated] = useState(false);
   const [isSheetOpen, setIsSheetOpen] = useState(false);
 
   const [selectedIncident, setSelectedIncident] = useState<IncidentType | null>(null);
@@ -59,6 +68,19 @@ export default function DayPlan() {
 
   const voiceRecorder = useVoiceRecorder();
   const detectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const plan = planItems?.map(item => ({
+    id: item.itemId,
+    type: item.type as "activity" | "medication" | "meal" | "rest",
+    title: item.title,
+    description: item.description,
+    time: item.time,
+    emoji: item.emoji,
+    tags: item.tags,
+    status: item.status as "pending" | "completed" | "skipped",
+    isGentle: item.isGentle,
+  })) ?? null;
+
   const { permission: notifPermission, requestPermission, clearFired } = useMedicationNotifications(plan);
   const [notifDismissed, setNotifDismissed] = useState(false);
   const hasMedications = plan?.some(item => item.type === "medication" && item.status === "pending") ?? false;
@@ -90,77 +112,93 @@ export default function DayPlan() {
   }, [selectedIncident]);
 
   useEffect(() => {
-    const loadPlan = async () => {
-      const onboardingStr = localStorage.getItem("thea_onboarding");
-      const medicationsStr = localStorage.getItem("thea_medications");
+    if (session === undefined || planItems === undefined) return;
 
-      if (!onboardingStr) {
-        setLocation("/");
-        return;
-      }
+    if (!session) {
+      setLocation("/");
+      return;
+    }
 
-      const onboarding = JSON.parse(onboardingStr);
-      const medications = medicationsStr ? JSON.parse(medicationsStr) : [];
-      
-      getOrCreateToday(onboarding, medications);
-      
-      try {
-        const data = await generatePlan({
-          onboarding,
-          medications,
-          currentTime: new Date().toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' })
-        });
-        setPlan(data);
-        savePlanForToday(data);
-      } catch (error) {
-        console.error("Failed to generate plan", error);
-      } finally {
-        setLoading(false);
-      }
-    };
+    if (planItems && planItems.length > 0) {
+      setLoading(false);
+      setPlanGenerated(true);
+      return;
+    }
 
-    loadPlan();
-  }, [generatePlan, setLocation]);
+    if (!planGenerated) {
+      setPlanGenerated(true);
+      const doGenerate = async () => {
+        try {
+          await generatePlanAction({
+            deviceId,
+            date,
+            childName: session.childName,
+            childAge: session.childAge,
+            illnessTypes: session.illnessTypes,
+            childEnergyLevel: session.childEnergyLevel,
+            parentEnergyLevel: session.parentEnergyLevel,
+            medications: session.medications,
+            currentTime: new Date().toLocaleTimeString("en-US", { hour12: false, hour: "2-digit", minute: "2-digit" }),
+          });
+        } catch (error) {
+          console.error("Failed to generate plan", error);
+        } finally {
+          setLoading(false);
+        }
+      };
+      doGenerate();
+    }
+  }, [session, planItems, planGenerated, deviceId, date, generatePlanAction, setLocation]);
 
   const handleUpdateItem = async (id: string, status: "completed" | "skipped") => {
-    const updatedPlan = plan ? plan.map(item => item.id === id ? { ...item, status } : item) : null;
-    setPlan(updatedPlan);
-    if (updatedPlan) savePlanForToday(updatedPlan);
-    
-    try {
-      await updateItem({ id, status });
-    } catch (error) {
-      console.error(error);
-    }
+    await updatePlanItemMutation({ deviceId, date, itemId: id, status });
   };
 
   const handleIncidentReport = async (incident?: IncidentType, description?: string) => {
+    if (!session) return;
     setLoading(true);
     setIsSheetOpen(false);
     const descriptionToSend = description;
-    const existingPlanToSend = plan ? [...plan] : undefined;
+    const existingPlanToSend = plan ? plan.map(p => ({
+      itemId: p.id,
+      type: p.type,
+      title: p.title,
+      description: p.description,
+      time: p.time,
+      emoji: p.emoji,
+      tags: p.tags,
+      status: p.status,
+      isGentle: p.isGentle,
+    })) : undefined;
     resetSheetState();
-    
-    const onboardingStr = localStorage.getItem("thea_onboarding");
-    const medicationsStr = localStorage.getItem("thea_medications");
-    
-    if (onboardingStr) {
-      const onboarding = JSON.parse(onboardingStr);
-      const medications = medicationsStr ? JSON.parse(medicationsStr) : [];
-      
-      addIncidentToday(incident, descriptionToSend);
-      
-      const data = await generatePlan({
-        onboarding,
-        medications,
-        currentTime: new Date().toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' }),
+
+    await addIncidentMutation({
+      deviceId,
+      date,
+      timestamp: new Date().toISOString(),
+      category: incident,
+      description: descriptionToSend,
+    });
+
+    try {
+      await generatePlanAction({
+        deviceId,
+        date,
+        childName: session.childName,
+        childAge: session.childAge,
+        illnessTypes: session.illnessTypes,
+        childEnergyLevel: session.childEnergyLevel,
+        parentEnergyLevel: session.parentEnergyLevel,
+        medications: session.medications,
+        currentTime: new Date().toLocaleTimeString("en-US", { hour12: false, hour: "2-digit", minute: "2-digit" }),
         incident: incident || undefined,
         incidentDescription: descriptionToSend || undefined,
         existingPlan: existingPlanToSend,
       });
       clearFired();
-      setPlan(data);
-      savePlanForToday(data);
+    } catch (error) {
+      console.error("Failed to regenerate plan", error);
+    } finally {
       setLoading(false);
     }
   };
@@ -188,7 +226,7 @@ export default function DayPlan() {
     }
   };
 
-  if (loading) {
+  if (loading || session === undefined || planItems === undefined) {
     return (
       <Layout hideHeader>
         <div className="space-y-4 pt-10">

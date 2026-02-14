@@ -1,17 +1,19 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
+import { useQuery } from "convex/react";
+import { api } from "../../../convex/_generated/api";
+import { getDeviceId } from "@/lib/device-id";
 import { Layout } from "@/components/Layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { User, Calendar, Activity, Zap, Heart, Pill, FileText, Clock, AlertTriangle, ChevronDown, ChevronUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { getSickDays, type SickDay } from "@/lib/incident-history";
-import type { OnboardingData } from "@shared/schema";
+import { Skeleton } from "@/components/ui/skeleton";
 
-function SickDayCard({ day, index }: { day: SickDay; index: number }) {
+function SickDayCard({ day, index }: { day: any; index: number }) {
   const [expanded, setExpanded] = useState(false);
   const date = new Date(day.date + "T12:00:00");
   const formatted = date.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" });
-  const completedCount = day.plan.filter(p => p.status === "completed").length;
+  const completedCount = day.plan.filter((p: any) => p.status === "completed").length;
   const totalCount = day.plan.length;
 
   return (
@@ -64,7 +66,7 @@ function SickDayCard({ day, index }: { day: SickDay; index: number }) {
                   <Pill className="w-3 h-3" /> Medications
                 </p>
                 <div className="flex flex-wrap gap-1.5">
-                  {day.medications.map((med, i) => (
+                  {day.medications.map((med: any, i: number) => (
                     <Badge key={i} variant="outline" className="text-[10px]">
                       {med.name} — {med.dosage} every {med.frequency}
                     </Badge>
@@ -79,7 +81,7 @@ function SickDayCard({ day, index }: { day: SickDay; index: number }) {
                   <FileText className="w-3 h-3" /> Schedule ({completedCount}/{totalCount} completed)
                 </p>
                 <div className="space-y-1.5">
-                  {day.plan.map((item, i) => (
+                  {day.plan.map((item: any, i: number) => (
                     <div key={i} className="flex items-center gap-2 text-xs">
                       <Clock className="w-3 h-3 text-muted-foreground shrink-0" />
                       <span className="text-muted-foreground w-10 shrink-0">{item.time}</span>
@@ -99,7 +101,7 @@ function SickDayCard({ day, index }: { day: SickDay; index: number }) {
                   <AlertTriangle className="w-3 h-3" /> Incident Reports
                 </p>
                 <div className="space-y-2">
-                  {day.incidents.map((inc, i) => {
+                  {day.incidents.map((inc: any, i: number) => {
                     const time = new Date(inc.timestamp).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
                     return (
                       <div key={i} className="bg-muted/50 rounded-md p-2.5">
@@ -122,16 +124,22 @@ function SickDayCard({ day, index }: { day: SickDay; index: number }) {
 }
 
 export default function Profile() {
-  const [onboarding, setOnboarding] = useState<OnboardingData | null>(null);
-  const [sickDays, setSickDays] = useState<SickDay[]>([]);
+  const deviceId = getDeviceId();
+  const session = useQuery(api.queries.getSession, { deviceId });
+  const sickDays = useQuery(api.queries.getSickDays, { deviceId });
 
-  useEffect(() => {
-    const raw = localStorage.getItem("thea_onboarding");
-    if (raw) setOnboarding(JSON.parse(raw));
-    setSickDays(getSickDays().reverse());
-  }, []);
+  if (session === undefined || sickDays === undefined) {
+    return (
+      <Layout title="Profile" showBack backTo="/plan">
+        <div className="space-y-6">
+          <Skeleton className="h-40 w-full rounded-xl" />
+          <Skeleton className="h-20 w-full rounded-xl" />
+        </div>
+      </Layout>
+    );
+  }
 
-  if (!onboarding) {
+  if (!session) {
     return (
       <Layout title="Profile" showBack backTo="/plan">
         <div className="text-center py-20 text-muted-foreground">
@@ -154,16 +162,16 @@ export default function Profile() {
           <CardContent className="space-y-3">
             <div className="flex items-center justify-between">
               <span className="text-sm text-muted-foreground">Name</span>
-              <span data-testid="text-child-name" className="text-sm font-medium">{onboarding.childName}</span>
+              <span data-testid="text-child-name" className="text-sm font-medium">{session.childName}</span>
             </div>
             <div className="flex items-center justify-between">
               <span className="text-sm text-muted-foreground">Age</span>
-              <span data-testid="text-child-age" className="text-sm font-medium">{onboarding.childAge} year{onboarding.childAge !== 1 ? "s" : ""} old</span>
+              <span data-testid="text-child-age" className="text-sm font-medium">{session.childAge} year{session.childAge !== 1 ? "s" : ""} old</span>
             </div>
             <div className="flex items-center justify-between flex-wrap gap-2">
               <span className="text-sm text-muted-foreground">Current illness</span>
               <div className="flex flex-wrap gap-1">
-                {onboarding.illnessTypes.map(illness => (
+                {session.illnessTypes.map((illness: string) => (
                   <Badge key={illness} variant="secondary" data-testid={`badge-illness-${illness.toLowerCase().replace(/\s/g, '-')}`}>
                     {illness}
                   </Badge>
@@ -178,7 +186,7 @@ export default function Profile() {
             <Activity className="w-4 h-4" />
             Sick Day History
           </h2>
-          {sickDays.length === 0 ? (
+          {!sickDays || sickDays.length === 0 ? (
             <Card>
               <CardContent className="p-6 text-center">
                 <p data-testid="text-no-history" className="text-sm text-muted-foreground">
@@ -188,7 +196,7 @@ export default function Profile() {
             </Card>
           ) : (
             <div className="space-y-3">
-              {sickDays.map((day, i) => (
+              {sickDays.map((day: any, i: number) => (
                 <SickDayCard key={day.date} day={day} index={i} />
               ))}
             </div>

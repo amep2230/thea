@@ -2,6 +2,9 @@ import { useState } from "react";
 import { useLocation } from "wouter";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useMutation } from "convex/react";
+import { api } from "../../../convex/_generated/api";
+import { getDeviceId } from "@/lib/device-id";
 import { medicationSchema, MEDICATION_FREQUENCIES, type MedicationData } from "@shared/schema";
 import { Layout } from "@/components/Layout";
 import { TheaCard } from "@/components/ui/theaCard";
@@ -14,6 +17,7 @@ import { motion, AnimatePresence } from "framer-motion";
 
 export default function Medications() {
   const [, setLocation] = useLocation();
+  const saveMedications = useMutation(api.mutations.saveMedications);
   const [medications, setMedications] = useState<MedicationData[]>([]);
   const [isAdding, setIsAdding] = useState(true);
 
@@ -44,13 +48,19 @@ export default function Medications() {
     setMedications(newMeds);
   };
 
-  const onContinue = () => {
-    localStorage.setItem("thea_medications", JSON.stringify(medications));
+  const onContinue = async () => {
+    await saveMedications({
+      deviceId: getDeviceId(),
+      medications,
+    });
     setLocation("/plan");
   };
 
-  const onSkip = () => {
-    localStorage.setItem("thea_medications", JSON.stringify([]));
+  const onSkip = async () => {
+    await saveMedications({
+      deviceId: getDeviceId(),
+      medications: [],
+    });
     setLocation("/plan");
   };
 

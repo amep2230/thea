@@ -1,6 +1,6 @@
 import { Switch, Route, useLocation } from "wouter";
-import { queryClient } from "./lib/queryClient";
-import { QueryClientProvider } from "@tanstack/react-query";
+import { useQuery } from "convex/react";
+import { api } from "../../convex/_generated/api";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import NotFound from "@/pages/not-found";
@@ -11,16 +11,19 @@ import DayPlan from "@/pages/DayPlan";
 import Profile from "@/pages/Profile";
 import Information from "@/pages/Information";
 import { useEffect } from "react";
+import { getDeviceId } from "@/lib/device-id";
 
 function Router() {
   const [location, setLocation] = useLocation();
+  const deviceId = getDeviceId();
+  const session = useQuery(api.queries.getSession, { deviceId });
 
   useEffect(() => {
-    const hasOnboarding = localStorage.getItem("thea_onboarding");
-    if (!hasOnboarding && (location === "/medications" || location === "/plan")) {
+    if (session === undefined) return;
+    if (!session && (location === "/medications" || location === "/plan")) {
       setLocation("/");
     }
-  }, [location, setLocation]);
+  }, [location, setLocation, session]);
 
   return (
     <Switch>
@@ -37,12 +40,10 @@ function Router() {
 
 function App() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <Toaster />
-        <Router />
-      </TooltipProvider>
-    </QueryClientProvider>
+    <TooltipProvider>
+      <Toaster />
+      <Router />
+    </TooltipProvider>
   );
 }
 

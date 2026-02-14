@@ -1,5 +1,8 @@
 import { useState, useCallback } from "react"
 import { useLocation } from "wouter"
+import { useMutation } from "convex/react"
+import { api } from "../../../../convex/_generated/api"
+import { getDeviceId } from "@/lib/device-id"
 import { ArrowLeft } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { StepIndicator } from "./step-indicator"
@@ -43,6 +46,7 @@ interface FormData {
 
 export function OnboardingForm() {
   const [, setLocation] = useLocation()
+  const saveSession = useMutation(api.mutations.saveSession)
   const [step, setStep] = useState(1)
   const [direction, setDirection] = useState<"forward" | "backward">("forward")
   const [formData, setFormData] = useState<FormData>({
@@ -70,15 +74,19 @@ export function OnboardingForm() {
     }
   }, [step, formData])
 
-  const saveAndNavigate = () => {
+  const saveAndNavigate = async () => {
     const onboardingData = {
       childName: formData.childName,
-      childAge: formData.childAge,
+      childAge: formData.childAge!,
       illnessTypes: formData.illnessTypes.map((id) => ILLNESS_ID_TO_LABEL[id] || id),
       childEnergyLevel: formData.childEnergy ? (CHILD_ENERGY_MAP[formData.childEnergy] || formData.childEnergy) : "Medium",
       parentEnergyLevel: formData.parentEnergy ? (PARENT_ENERGY_MAP[formData.parentEnergy] || formData.parentEnergy) : "Medium",
     }
-    localStorage.setItem("thea_onboarding", JSON.stringify(onboardingData))
+    await saveSession({
+      deviceId: getDeviceId(),
+      ...onboardingData,
+      medications: [],
+    })
     setLocation("/medications")
   }
 

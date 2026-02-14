@@ -1,4 +1,5 @@
 import { createRoot } from "react-dom/client";
+import { ConvexProvider, ConvexReactClient } from "convex/react";
 import App from "./App";
 import "./index.css";
 
@@ -6,4 +7,10 @@ if ("serviceWorker" in navigator) {
   navigator.serviceWorker.register("/sw.js").catch(() => {});
 }
 
-createRoot(document.getElementById("root")!).render(<App />);
+const convex = new ConvexReactClient(import.meta.env.VITE_CONVEX_URL as string);
+
+createRoot(document.getElementById("root")!).render(
+  <ConvexProvider client={convex}>
+    <App />
+  </ConvexProvider>
+);
