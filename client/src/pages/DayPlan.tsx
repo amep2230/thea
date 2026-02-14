@@ -2,13 +2,14 @@ import { useEffect, useState, useCallback, useRef } from "react";
 import { useLocation } from "wouter";
 import { useGeneratePlan, useUpdatePlanItem } from "@/hooks/use-plan";
 import { useVoiceRecorder } from "@/hooks/use-voice-recorder";
+import { useMedicationNotifications } from "@/hooks/use-medication-notifications";
 import { Layout } from "@/components/Layout";
 import { PlanCard } from "@/components/PlanCard";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
-import { AlertCircle, PartyPopper, Thermometer, BatteryLow, Smile, Frown, Mic, MicOff, Loader2, Sparkles, Utensils, Send } from "lucide-react";
+import { AlertCircle, PartyPopper, Thermometer, BatteryLow, Smile, Frown, Mic, MicOff, Loader2, Sparkles, Utensils, Send, Bell, BellOff } from "lucide-react";
 import type { PlanResponse, IncidentType } from "@shared/schema";
 
 const INCIDENT_PATTERNS: { incident: IncidentType; keywords: string[] }[] = [
@@ -57,6 +58,9 @@ export default function DayPlan() {
 
   const voiceRecorder = useVoiceRecorder();
   const detectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const { permission: notifPermission, requestPermission, clearFired } = useMedicationNotifications(plan);
+  const [notifDismissed, setNotifDismissed] = useState(false);
+  const hasMedications = plan?.some(item => item.type === "medication" && item.status === "pending") ?? false;
 
   useEffect(() => {
     if (voiceRecorder.result) {
@@ -146,6 +150,7 @@ export default function DayPlan() {
         incidentDescription: descriptionToSend || undefined,
         existingPlan: existingPlanToSend,
       });
+      clearFired();
       setPlan(data);
       setLoading(false);
     }
@@ -200,6 +205,51 @@ export default function DayPlan() {
             In progress
           </span>
         </div>
+
+        {hasMedications && notifPermission !== "granted" && !notifDismissed && (
+          <div
+            data-testid="container-notification-prompt"
+            className="bg-card border border-border rounded-xl p-4 flex items-start gap-3"
+          >
+            <Bell className="w-5 h-5 text-primary shrink-0 mt-0.5" />
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-foreground">Enable medication reminders</p>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Get notified with a sound alert when it's time for the next dose — even if you're not looking at your phone.
+              </p>
+              <div className="flex items-center gap-2 mt-3 flex-wrap">
+                <Button
+                  data-testid="button-enable-notifications"
+                  size="sm"
+                  onClick={requestPermission}
+                >
+                  <Bell className="w-3.5 h-3.5 mr-1.5" />
+                  Turn on reminders
+                </Button>
+                <Button
+                  data-testid="button-dismiss-notifications"
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => setNotifDismissed(true)}
+                >
+                  Not now
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {hasMedications && notifPermission === "granted" && (
+          <div
+            data-testid="container-notification-active"
+            className="bg-sage-50 border border-sage-200 rounded-xl px-4 py-3 flex items-center gap-3"
+          >
+            <Bell className="w-4 h-4 text-primary shrink-0" />
+            <p className="text-xs text-sage-600">
+              Medication reminders are on — you'll hear an alert when it's time.
+            </p>
+          </div>
+        )}
 
         <div data-testid="container-plan-items">
           {plan?.map((item) => (
