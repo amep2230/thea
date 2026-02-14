@@ -4,17 +4,18 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { medicationSchema, MEDICATION_FREQUENCIES, type MedicationData } from "@shared/schema";
 import { Layout } from "@/components/Layout";
+import { TheaCard } from "@/components/ui/theaCard";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { ChevronRight, Plus, Trash2, Pill } from "lucide-react";
+import { ChevronRight, Plus, Trash2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 export default function Medications() {
   const [, setLocation] = useLocation();
   const [medications, setMedications] = useState<MedicationData[]>([]);
-  const [isAdding, setIsAdding] = useState(true); // Start with form open if empty
+  const [isAdding, setIsAdding] = useState(true);
 
   const form = useForm<MedicationData>({
     resolver: zodResolver(medicationSchema),
@@ -60,11 +61,13 @@ export default function Medications() {
         animate={{ opacity: 1 }}
         className="space-y-6"
       >
-        <div className="bg-blue-50/50 p-4 rounded-xl border border-blue-100 text-blue-800 text-sm">
-          Add any medications you're managing today so we can remind you when it's time for the next dose.
-        </div>
+        <TheaCard
+          type="alert"
+          title="Medication Reminders"
+          description="Add any medications you're managing today so we can remind you when it's time for the next dose."
+          data-testid="card-medication-info"
+        />
 
-        {/* List of added medications */}
         <div className="space-y-3">
           {medications.map((med, index) => (
             <motion.div
@@ -72,37 +75,37 @@ export default function Medications() {
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: "auto" }}
               exit={{ opacity: 0, height: 0 }}
-              className="flex items-center justify-between p-4 bg-white rounded-xl border border-border shadow-sm"
             >
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-rose-100 text-rose-600 flex items-center justify-center">
-                  <Pill className="w-5 h-5" />
-                </div>
-                <div>
-                  <h4 className="font-bold text-foreground">{med.name}</h4>
-                  <p className="text-sm text-muted-foreground">{med.dosage} • Every {med.frequency}</p>
-                </div>
-              </div>
-              <button 
-                onClick={() => onRemoveMedication(index)}
-                className="p-2 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-full transition-colors"
-              >
-                <Trash2 className="w-5 h-5" />
-              </button>
+              <TheaCard
+                type="medication"
+                title={med.name}
+                description={`${med.dosage} \u00b7 Every ${med.frequency}`}
+                data-testid={`card-medication-${index}`}
+                actions={
+                  <Button
+                    data-testid={`button-remove-medication-${index}`}
+                    size="icon"
+                    variant="ghost"
+                    onClick={() => onRemoveMedication(index)}
+                    className="text-muted-foreground"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
+                }
+              />
             </motion.div>
           ))}
         </div>
 
-        {/* Add Medication Form */}
         <AnimatePresence>
           {isAdding ? (
             <motion.div
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, height: 0 }}
-              className="bg-card p-5 rounded-2xl border border-primary/20 shadow-lg shadow-primary/5"
+              className="bg-card p-5 rounded-xl border border-thea-border shadow-thea"
             >
-              <h3 className="font-bold text-lg mb-4">Add Medication</h3>
+              <h3 className="font-display text-lg mb-4">Add Medication</h3>
               <Form {...form}>
                 <form onSubmit={form.handleSubmit(onAddMedication)} className="space-y-4">
                   <FormField
@@ -113,7 +116,7 @@ export default function Medications() {
                         <FormLabel>Medication Name</FormLabel>
                         <Select onValueChange={field.onChange} defaultValue={field.value}>
                           <FormControl>
-                            <SelectTrigger>
+                            <SelectTrigger data-testid="select-medication-name">
                               <SelectValue placeholder="Select or type..." />
                             </SelectTrigger>
                           </FormControl>
@@ -125,7 +128,6 @@ export default function Medications() {
                             <SelectItem value="Other">Other</SelectItem>
                           </SelectContent>
                         </Select>
-                        {/* Fallback to text input if 'Other' is selected logic could be added here, keeping simple for now */}
                         <FormMessage />
                       </FormItem>
                     )}
@@ -139,7 +141,7 @@ export default function Medications() {
                         <FormItem>
                           <FormLabel>Dosage</FormLabel>
                           <FormControl>
-                            <Input placeholder="e.g. 5ml" {...field} />
+                            <Input data-testid="input-dosage" placeholder="e.g. 5ml" {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -154,7 +156,7 @@ export default function Medications() {
                           <FormLabel>Frequency</FormLabel>
                           <Select onValueChange={field.onChange} defaultValue={field.value}>
                             <FormControl>
-                              <SelectTrigger>
+                              <SelectTrigger data-testid="select-frequency">
                                 <SelectValue placeholder="Frequency" />
                               </SelectTrigger>
                             </FormControl>
@@ -177,7 +179,7 @@ export default function Medications() {
                       <FormItem>
                         <FormLabel>Time Last Given</FormLabel>
                         <FormControl>
-                          <Input type="time" {...field} className="block w-full" />
+                          <Input data-testid="input-time-last-given" type="time" {...field} className="block w-full" />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -185,16 +187,17 @@ export default function Medications() {
                   />
 
                   <div className="flex gap-3 pt-2">
-                    <Button type="button" variant="outline" className="flex-1" onClick={() => setIsAdding(false)}>Cancel</Button>
-                    <Button type="submit" className="flex-1">Add</Button>
+                    <Button data-testid="button-cancel-medication" type="button" variant="outline" className="flex-1" onClick={() => setIsAdding(false)}>Cancel</Button>
+                    <Button data-testid="button-add-medication" type="submit" className="flex-1">Add</Button>
                   </div>
                 </form>
               </Form>
             </motion.div>
           ) : (
             <Button 
+              data-testid="button-add-another"
               variant="outline" 
-              className="w-full h-12 border-dashed border-2" 
+              className="w-full border-dashed border-2" 
               onClick={() => setIsAdding(true)}
             >
               <Plus className="w-4 h-4 mr-2" /> Add Another Medication
@@ -202,16 +205,20 @@ export default function Medications() {
           )}
         </AnimatePresence>
 
-        <div className="fixed bottom-0 left-0 right-0 p-4 bg-background/80 backdrop-blur-lg border-t border-border flex gap-4 safe-bottom">
+        <div className="fixed bottom-0 left-0 right-0 p-4 bg-[#FAF6F1]/80 backdrop-blur-lg border-t border-thea-border flex gap-4 safe-bottom">
           <Button 
+            data-testid="button-skip-medications"
             variant="ghost" 
-            className="flex-1 h-14 text-muted-foreground"
+            className="flex-1"
+            size="lg"
             onClick={onSkip}
           >
             Skip for now
           </Button>
           <Button 
-            className="flex-[2] h-14 text-lg rounded-xl shadow-lg shadow-primary/25"
+            data-testid="button-create-plan"
+            className="flex-[2]"
+            size="lg"
             onClick={onContinue}
           >
             Create Plan <ChevronRight className="w-5 h-5 ml-2" />

@@ -12,11 +12,11 @@ import { AlertCircle, PartyPopper, Thermometer, BatteryLow, Smile, Frown, Mic, M
 import type { PlanResponse, IncidentType } from "@shared/schema";
 
 const INCIDENT_OPTIONS: { type: IncidentType; label: string; icon: any; colorClass: string }[] = [
-  { type: "Fever spike", label: "Fever Spike", icon: Thermometer, colorClass: "text-rose-500" },
-  { type: "Threw up", label: "Threw up", icon: Frown, colorClass: "text-orange-500" },
-  { type: "Energy crashed", label: "Energy Crash", icon: BatteryLow, colorClass: "text-slate-500" },
-  { type: "Feeling better", label: "Feeling Better", icon: Smile, colorClass: "text-emerald-500" },
-  { type: "Won't eat/drink", label: "Won't eat/drink", icon: Utensils, colorClass: "text-blue-500" },
+  { type: "Fever spike", label: "Fever Spike", icon: Thermometer, colorClass: "text-alert" },
+  { type: "Threw up", label: "Threw up", icon: Frown, colorClass: "text-activity" },
+  { type: "Energy crashed", label: "Energy Crash", icon: BatteryLow, colorClass: "text-rest" },
+  { type: "Feeling better", label: "Feeling Better", icon: Smile, colorClass: "text-meal" },
+  { type: "Won't eat/drink", label: "Won't eat/drink", icon: Utensils, colorClass: "text-medication" },
 ];
 
 export default function DayPlan() {
@@ -130,11 +130,11 @@ export default function DayPlan() {
   if (loading) {
     return (
       <Layout hideHeader>
-        <div className="space-y-6 pt-10 animate-pulse">
-          <div className="h-8 bg-muted rounded-lg w-3/4 mb-4"></div>
-          <div className="space-y-4">
+        <div className="space-y-4 pt-10">
+          <div className="h-8 bg-muted rounded-lg w-3/4 mb-4 animate-pulse"></div>
+          <div className="space-y-3">
             {[1, 2, 3, 4].map(i => (
-              <Skeleton key={i} className="h-40 w-full rounded-2xl" />
+              <Skeleton key={i} className="h-28 w-full rounded-xl" />
             ))}
           </div>
         </div>
@@ -144,17 +144,17 @@ export default function DayPlan() {
 
   return (
     <Layout title="Today's Care Plan" showBack backTo="/medications">
-      <div className="space-y-6 relative">
-        <div className="flex items-center justify-between flex-wrap gap-2 mb-4">
-          <p data-testid="text-plan-date" className="text-muted-foreground">
+      <div className="space-y-4 relative">
+        <div className="flex items-center justify-between flex-wrap gap-2 mb-2">
+          <p data-testid="text-plan-date" className="text-muted-foreground text-sm">
             {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
           </p>
-          <div data-testid="status-plan-progress" className="text-sm font-medium text-primary bg-primary/10 px-3 py-1 rounded-full">
+          <span data-testid="status-plan-progress" className="text-xs font-semibold text-sage-600 bg-sage-100 px-3 py-1 rounded-full">
             In progress
-          </div>
+          </span>
         </div>
 
-        <div className="space-y-4" data-testid="container-plan-items">
+        <div data-testid="container-plan-items">
           {plan?.map((item) => (
             <PlanCard 
               key={item.id} 
@@ -183,7 +183,7 @@ export default function DayPlan() {
                 Something changed
               </Button>
             </SheetTrigger>
-            <SheetContent side="bottom" className="rounded-t-[2rem] px-6 py-8 h-auto max-h-[85vh]">
+            <SheetContent side="bottom" className="rounded-t-2xl px-6 py-8 h-auto max-h-[85vh]">
               <SheetHeader className="mb-6 text-left">
                 <SheetTitle className="text-2xl font-display">What happened?</SheetTitle>
                 <SheetDescription>
@@ -193,7 +193,7 @@ export default function DayPlan() {
 
               <div className="mb-6">
                 <div className="flex items-center gap-2 mb-3">
-                  <Sparkles className="w-4 h-4 text-primary" />
+                  <Sparkles className="w-4 h-4 text-sage-400" />
                   <span data-testid="text-voice-label" className="text-sm font-medium text-foreground">Voice-to-Action</span>
                 </div>
                 <div className="flex items-start gap-3">
@@ -252,7 +252,7 @@ export default function DayPlan() {
                 )}
 
                 {voiceRecorder.result?.detectedIncident && (
-                  <div data-testid="text-ai-detection" className="flex items-center gap-2 mt-3 text-sm text-primary">
+                  <div data-testid="text-ai-detection" className="flex items-center gap-2 mt-3 text-sm text-sage-500">
                     <Sparkles className="w-3.5 h-3.5" />
                     <span>
                       Auto-detected: <span className="font-semibold">{voiceRecorder.result.detectedIncident}</span>
@@ -272,14 +272,14 @@ export default function DayPlan() {
                       data-testid={`button-incident-${option.type.toLowerCase().replace(/[\s/]+/g, '-')}`}
                       variant="outline"
                       className={`h-auto py-5 flex flex-col gap-2 rounded-xl relative transition-all duration-300
-                        ${isSelected ? 'ring-2 ring-primary border-primary bg-primary/5' : ''}
+                        ${isSelected ? 'ring-2 ring-sage-400 border-sage-400 bg-sage-50' : ''}
                         ${isAiPick ? 'incident-sparkle' : ''}
                         ${option.type === "Won't eat/drink" ? 'col-span-2' : ''}
                       `}
                       onClick={() => setSelectedIncident(option.type)}
                     >
                       {isAiPick && (
-                        <span data-testid={`badge-ai-pick-${option.type.toLowerCase().replace(/[\s/]+/g, '-')}`} className="absolute -top-2 -right-2 bg-primary text-primary-foreground text-[10px] font-bold px-1.5 py-0.5 rounded-full flex items-center gap-0.5">
+                        <span data-testid={`badge-ai-pick-${option.type.toLowerCase().replace(/[\s/]+/g, '-')}`} className="absolute -top-2 -right-2 bg-sage-400 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full flex items-center gap-0.5">
                           <Sparkles className="w-2.5 h-2.5" />
                           AI
                         </span>

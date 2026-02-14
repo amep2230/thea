@@ -8,7 +8,7 @@ import { ToggleCard } from "@/components/ui/toggle-card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { Thermometer, Zap, Battery, BatteryMedium, BatteryLow, Stethoscope, ChevronRight } from "lucide-react";
+import { Zap, Battery, BatteryMedium, BatteryLow, Stethoscope, ChevronRight } from "lucide-react";
 import { motion } from "framer-motion";
 
 export default function Onboarding() {
@@ -27,7 +27,6 @@ export default function Onboarding() {
   });
 
   const onSubmit = (data: OnboardingData) => {
-    // Persist to local storage
     localStorage.setItem("thea_onboarding", JSON.stringify(data));
     setLocation("/medications");
   };
@@ -48,10 +47,10 @@ export default function Onboarding() {
         className="space-y-6"
       >
         <div className="pt-8 pb-4">
-          <div className="w-12 h-12 bg-primary/10 rounded-2xl flex items-center justify-center mb-4 text-primary">
+          <div className="w-12 h-12 bg-sage-100 rounded-xl flex items-center justify-center mb-4 text-sage-500">
             <Stethoscope className="w-6 h-6" />
           </div>
-          <h1 className="text-3xl font-bold font-display text-foreground mb-2">
+          <h1 data-testid="text-onboarding-title" className="text-3xl font-display text-foreground mb-2">
             Let's help your little one feel better.
           </h1>
           <p className="text-muted-foreground text-lg">
@@ -62,10 +61,9 @@ export default function Onboarding() {
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
             
-            {/* Child Info Section */}
             <div className="space-y-4">
               <h3 className="text-lg font-semibold flex items-center gap-2">
-                <span className="w-6 h-6 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-xs">1</span>
+                <span className="w-6 h-6 rounded-full bg-sage-100 text-sage-600 flex items-center justify-center text-xs font-bold">1</span>
                 Who is sick today?
               </h3>
               
@@ -77,7 +75,7 @@ export default function Onboarding() {
                     <FormItem>
                       <FormLabel>Name</FormLabel>
                       <FormControl>
-                        <Input placeholder="Child's name" className="h-12 text-lg" {...field} />
+                        <Input data-testid="input-child-name" placeholder="Child's name" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -92,10 +90,10 @@ export default function Onboarding() {
                       <FormLabel>Age (1-8)</FormLabel>
                       <FormControl>
                         <Input 
+                          data-testid="input-child-age"
                           type="number" 
                           min={1} 
                           max={8} 
-                          className="h-12 text-lg" 
                           placeholder="Age"
                           {...field} 
                           onChange={(e) => field.onChange(e.target.valueAsNumber)}
@@ -108,10 +106,9 @@ export default function Onboarding() {
               </div>
             </div>
 
-            {/* Symptoms Section */}
             <div className="space-y-4">
               <h3 className="text-lg font-semibold flex items-center gap-2">
-                <span className="w-6 h-6 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center text-xs">2</span>
+                <span className="w-6 h-6 rounded-full bg-rest/20 text-rest flex items-center justify-center text-xs font-bold">2</span>
                 What are the symptoms?
               </h3>
               
@@ -128,6 +125,7 @@ export default function Onboarding() {
                           selected={form.watch("illnessTypes").includes(type)}
                           onClick={() => handleIllnessToggle(type)}
                           className="aspect-[2/1] text-left px-4"
+                          data-testid={`toggle-illness-${type.toLowerCase().replace(/[\s/]+/g, '-')}`}
                         />
                       ))}
                     </div>
@@ -137,10 +135,9 @@ export default function Onboarding() {
               />
             </div>
 
-            {/* Energy Levels Section */}
             <div className="space-y-6">
               <h3 className="text-lg font-semibold flex items-center gap-2">
-                <span className="w-6 h-6 rounded-full bg-orange-100 text-orange-600 flex items-center justify-center text-xs">3</span>
+                <span className="w-6 h-6 rounded-full bg-activity/20 text-activity flex items-center justify-center text-xs font-bold">3</span>
                 Energy Check-in
               </h3>
 
@@ -162,6 +159,7 @@ export default function Onboarding() {
                           }
                           selected={field.value === level}
                           onClick={() => field.onChange(level)}
+                          data-testid={`toggle-child-energy-${level.toLowerCase()}`}
                         />
                       ))}
                     </div>
@@ -183,6 +181,7 @@ export default function Onboarding() {
                           icon={<Zap className="w-6 h-6" />}
                           selected={field.value === level}
                           onClick={() => field.onChange(level)}
+                          data-testid={`toggle-parent-energy-${level.toLowerCase()}`}
                         />
                       ))}
                     </div>
@@ -192,8 +191,9 @@ export default function Onboarding() {
             </div>
 
             <Button 
+              data-testid="button-continue"
               type="submit" 
-              className="w-full h-14 text-lg rounded-xl shadow-lg shadow-primary/25"
+              className="w-full"
               size="lg"
             >
               Continue to Medications <ChevronRight className="w-5 h-5 ml-2" />
