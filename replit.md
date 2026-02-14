@@ -15,16 +15,23 @@ Mobile-first web app helping parents manage their child's sick days. Guides them
 
 ## Key Features
 - Day plan generation based on child energy level and illness
-- Incident reporting ("Something changed" FAB) with plan regeneration
-- **Voice-to-Action**: Uses browser Web Speech API for voice recognition, auto-detects incident type with sparkle animation feedback (no external API needed)
+- **Hybrid Incident Reporting**: "Something changed" FAB opens a sheet where parents can:
+  - Type or speak a free-form description (primary input)
+  - Optionally select a quick-pick category (Fever spike, Threw up, Energy crash, Feeling better, Won't eat/drink)
+  - Submit with either or both — no forced category selection
+  - Auto-detection highlights matching category from typed text via keyword matching
+- **MiniMax AI Plan Modification**: When an incident is reported, MiniMax M1 generates a personalized updated plan. Falls back to local generation if API unavailable.
+- **Voice-to-Action**: Browser Web Speech API for voice recognition with client-side incident detection
 
 ## API Routes
-- `POST /api/plan/generate` - Generate day plan from onboarding data
+- `POST /api/plan/generate` - Generate or modify day plan. Accepts optional `incident` (enum), `incidentDescription` (string), `existingPlan` (array). Either incident or description triggers AI-powered plan modification.
 - `PATCH /api/plan/:id` - Update plan item status (done/skip)
 
 ## Recent Changes
+- 2026-02-14: Hybrid incident input — users can type free-form descriptions without selecting a category
+  - Server-side keyword detection infers incident type from description text
+  - AI prompt handles description-only submissions intelligently
+  - Frontend text-first UI with compact category pills as optional quick-select
+  - Real-time auto-detection with debounced keyword matching on typed text
+- 2026-02-14: MiniMax AI integration for incident-based plan modification
 - 2026-02-14: Switched Voice-to-Action from MiniMax ASR to browser Web Speech API
-  - Removed `/api/voice/transcribe` backend endpoint (no longer needed)
-  - Frontend: `useVoiceRecorder` hook using Web Speech API (SpeechRecognition)
-  - Incident detection via keyword matching runs entirely client-side
-  - CSS: voice-pulse and incident-sparkle animations
