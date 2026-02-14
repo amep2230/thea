@@ -4,6 +4,7 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import NotFound from "@/pages/not-found";
+import Splash from "@/pages/Splash";
 import Onboarding from "@/pages/OnboardingNew";
 import Medications from "@/pages/Medications";
 import DayPlan from "@/pages/DayPlan";
@@ -12,7 +13,6 @@ import { useEffect } from "react";
 function Router() {
   const [location, setLocation] = useLocation();
 
-  // Simple redirect if trying to access protected routes without onboarding
   useEffect(() => {
     const hasOnboarding = localStorage.getItem("thea_onboarding");
     if (!hasOnboarding && (location === "/medications" || location === "/plan")) {
@@ -22,7 +22,7 @@ function Router() {
 
   return (
     <Switch>
-      <Route path="/" component={Onboarding} />
+      <Route path="/" component={Splash} />
       <Route path="/onboarding" component={Onboarding} />
       <Route path="/medications" component={Medications} />
       <Route path="/plan" component={DayPlan} />

@@ -9,9 +9,10 @@ Mobile-first web app helping parents manage their child's sick days. Guides them
 - **Shared**: Zod schemas in `shared/schema.ts` and API contract in `shared/routes.ts`
 
 ## Screens
-1. **Onboarding** (`/`) - Collects child info, illness types, energy levels
-2. **Medication Setup** (`/medications`) - Optional medication entry with skip
-3. **Day Plan** (`/plan`) - Generated timeline of activities, meals, rest, meds
+1. **Splash** (`/`) - Logo, tagline, disclaimer, CTA to start onboarding
+2. **Onboarding** (`/onboarding`) - Multi-step wizard: child name, age, illness, energy levels
+3. **Medication Setup** (`/medications`) - Optional medication entry with skip
+4. **Day Plan** (`/plan`) - Generated timeline of activities, meals, rest, meds
 
 ## Key Features
 - Day plan generation based on child energy level and illness
