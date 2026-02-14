@@ -9,11 +9,6 @@
       "destination": "/api/server"
     }
   ],
-  "functions": {
-    "api/server.ts": {
-      "runtime": "nodejs20.x"
-    }
-  },
   "headers": [
     {
       "source": "/(.*)",
