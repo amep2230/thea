@@ -5,8 +5,8 @@
 @tailwind utilities;
 
 :root {
-  --font-sans: 'DM Sans', sans-serif;
-  --font-display: 'Outfit', sans-serif;
+  --font-sans: "DM Sans", sans-serif;
+  --font-display: "Outfit", sans-serif;
 
   /* Calming, soft palette - Soft Blues, Greens, Warm Neutrals */
   --background: 210 40% 98%;
