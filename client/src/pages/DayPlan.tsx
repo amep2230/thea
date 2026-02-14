@@ -84,9 +84,11 @@ export default function DayPlan() {
     }
   };
 
-  const handleIncident = async (incident: IncidentType) => {
+  const handleIncident = async (incident: IncidentType, description?: string) => {
     setLoading(true);
     setIsSheetOpen(false);
+    const descriptionToSend = description;
+    const existingPlanToSend = plan ? [...plan] : undefined;
     resetSheetState();
     
     const onboardingStr = localStorage.getItem("thea_onboarding");
@@ -100,7 +102,9 @@ export default function DayPlan() {
         onboarding,
         medications,
         currentTime: new Date().toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' }),
-        incident
+        incident,
+        incidentDescription: descriptionToSend || undefined,
+        existingPlan: existingPlanToSend,
       });
       setPlan(data);
       setLoading(false);
@@ -109,7 +113,7 @@ export default function DayPlan() {
 
   const handleSubmitIncident = () => {
     if (selectedIncident) {
-      handleIncident(selectedIncident);
+      handleIncident(selectedIncident, voiceDescription || undefined);
     }
   };
 

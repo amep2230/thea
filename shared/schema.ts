@@ -56,6 +56,8 @@ export type GeneratePlanRequest = {
   medications?: MedicationData[];
   currentTime: string; // HH:mm
   incident?: "Fever spike" | "Threw up" | "Energy crashed" | "Feeling better" | "Won't eat/drink";
+  incidentDescription?: string;
+  existingPlan?: PlanItem[];
 };
 
 export type UpdatePlanItemRequest = {

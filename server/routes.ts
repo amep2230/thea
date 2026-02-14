@@ -11,8 +11,6 @@ import {
 } from "@shared/schema";
 import { randomUUID } from "crypto";
 
-// --- Logic for Day Plan Generation ---
-
 function addMinutes(time: string, minutes: number): string {
   const [h, m] = time.split(':').map(Number);
   const date = new Date();
@@ -27,7 +25,7 @@ function timeDiff(time1: string, time2: string): number {
   return (h1 * 60 + m1) - (h2 * 60 + m2);
 }
 
-function generatePlan(input: GeneratePlanRequest): PlanItem[] {
+function generatePlanLocal(input: GeneratePlanRequest): PlanItem[] {
   const { onboarding, medications, currentTime, incident } = input;
   const plan: PlanItem[] = [];
   
@@ -45,35 +43,35 @@ function generatePlan(input: GeneratePlanRequest): PlanItem[] {
 
   const activities = {
     Low: [
-      { title: "Audiobook Time", emoji: "🎧", tags: ["rest", "quiet"] },
-      { title: "Gentle Stretching", emoji: "🧘", tags: ["movement"] },
-      { title: "Watch a Comfort Movie", emoji: "🎬", tags: ["screen"] },
-      { title: "Listen to Soft Music", emoji: "🎵", tags: ["rest"] },
+      { title: "Audiobook Time", emoji: "rest", tags: ["rest", "quiet"] },
+      { title: "Gentle Stretching", emoji: "movement", tags: ["movement"] },
+      { title: "Watch a Comfort Movie", emoji: "screen", tags: ["screen"] },
+      { title: "Listen to Soft Music", emoji: "rest", tags: ["rest"] },
     ],
     Medium: [
-      { title: "Coloring / Drawing", emoji: "🖍️", tags: ["creative"] },
-      { title: "Build a Fort", emoji: "🏰", tags: ["play"] },
-      { title: "Play with Lego/Blocks", emoji: "🧱", tags: ["play"] },
-      { title: "Read a Book Together", emoji: "📖", tags: ["bonding"] },
+      { title: "Coloring / Drawing", emoji: "creative", tags: ["creative"] },
+      { title: "Build a Fort", emoji: "play", tags: ["play"] },
+      { title: "Play with Lego/Blocks", emoji: "play", tags: ["play"] },
+      { title: "Read a Book Together", emoji: "bonding", tags: ["bonding"] },
     ],
     Okay: [
-      { title: "Dance Party (Short)", emoji: "💃", tags: ["active"] },
-      { title: "Simple Board Game", emoji: "🎲", tags: ["play"] },
-      { title: "Help with Simple Chores", emoji: "🧹", tags: ["helper"] },
-      { title: "Indoor Scavenger Hunt", emoji: "🔍", tags: ["active"] },
+      { title: "Dance Party (Short)", emoji: "active", tags: ["active"] },
+      { title: "Simple Board Game", emoji: "play", tags: ["play"] },
+      { title: "Help with Simple Chores", emoji: "helper", tags: ["helper"] },
+      { title: "Indoor Scavenger Hunt", emoji: "active", tags: ["active"] },
     ]
   };
 
   const rest_activities = [
-    { title: "Nap / Quiet Time", emoji: "💤", tags: ["rest"] },
-    { title: "Cuddle Time", emoji: "🧸", tags: ["bonding"] },
-    { title: "Screen Free Rest", emoji: "📵", tags: ["rest"] },
+    { title: "Nap / Quiet Time", emoji: "rest", tags: ["rest"] },
+    { title: "Cuddle Time", emoji: "bonding", tags: ["bonding"] },
+    { title: "Screen Free Rest", emoji: "rest", tags: ["rest"] },
   ];
 
   const meals = [
-    { title: "Hydration Check", emoji: "💧", description: "Water, juice, or electrolyte drink" },
-    { title: "Light Snack", emoji: "🍎", description: "Fruit, crackers, or toast" },
-    { title: "Meal Time", emoji: "🍽️", description: "Easy to digest food" },
+    { title: "Hydration Check", emoji: "hydration", description: "Water, juice, or electrolyte drink" },
+    { title: "Light Snack", emoji: "snack", description: "Fruit, crackers, or toast" },
+    { title: "Meal Time", emoji: "meal", description: "Easy to digest food" },
   ];
 
   const pick = (arr: any[]) => arr[Math.floor(Math.random() * arr.length)];
@@ -87,7 +85,7 @@ function generatePlan(input: GeneratePlanRequest): PlanItem[] {
       title: "Immediate Rest & Comfort",
       description: `Take a moment to handle the ${incident.toLowerCase()}.`,
       time: timeCursor,
-      emoji: "❤️",
+      emoji: "care",
       tags: ["incident"],
       status: "pending",
       isGentle: true
@@ -96,13 +94,6 @@ function generatePlan(input: GeneratePlanRequest): PlanItem[] {
   }
 
   while (timeDiff(endTime, timeCursor) > 0) {
-    if (medications && medications.length > 0) {
-      medications.forEach(med => {
-        const freqHours = parseInt(med.frequency);
-        const lastGiven = med.timeLastGiven;
-      });
-    }
-
     const hour = parseInt(timeCursor.split(':')[0]);
     
     let nextBlockDuration = 30;
@@ -168,7 +159,7 @@ function generatePlan(input: GeneratePlanRequest): PlanItem[] {
                 title: `Give ${med.name}`,
                 description: `Dosage: ${med.dosage}`,
                 time: nextDoseTime,
-                emoji: "💊",
+                emoji: "medication",
                 tags: ["medication", "important"],
                 status: "pending",
                 isGentle: false
@@ -184,6 +175,125 @@ function generatePlan(input: GeneratePlanRequest): PlanItem[] {
   return plan;
 }
 
+async function modifyPlanWithAI(input: GeneratePlanRequest): Promise<PlanItem[]> {
+  const { onboarding, medications, currentTime, incident, incidentDescription, existingPlan } = input;
+
+  const apiKey = process.env.MINIMAX_API_KEY;
+  if (!apiKey) {
+    console.warn("MINIMAX_API_KEY not set, falling back to local plan generation");
+    return generatePlanLocal(input);
+  }
+
+  const currentHour = parseInt(currentTime.split(':')[0]);
+  const endTime = currentHour >= 19 ? "23:00" : "19:30";
+
+  const existingPlanSummary = existingPlan
+    ?.filter(item => item.status === "pending")
+    .map(item => `${item.time} - [${item.type}] ${item.title}${item.description ? `: ${item.description}` : ''}`)
+    .join('\n') || "No existing plan items.";
+
+  const medicationSummary = medications?.length
+    ? medications.map(m => `${m.name} (${m.dosage}, every ${m.frequency})`).join(', ')
+    : "None";
+
+  const systemPrompt = `You are Thea, a caring AI assistant helping parents manage their child's sick day. You modify care plans when incidents happen during the day.
+
+RULES:
+- Output ONLY a valid JSON array of plan items, no other text
+- Each item must have: type ("activity"|"medication"|"meal"|"rest"), title (string), description (string), time (HH:mm 24h format), tags (string array), isGentle (boolean)
+- Generate items from ${currentTime} until ${endTime}
+- Time blocks should be 20-45 minutes apart
+- Keep any existing medication schedules
+- Be age-appropriate for a ${onboarding.childAge}-year-old
+- Adapt the plan based on the incident that occurred
+- Activities should be realistic indoor sick-day activities
+- Include hydration checks every 1-2 hours
+- Balance rest with gentle activities based on energy level`;
+
+  const userPrompt = `CHILD: ${onboarding.childName}, age ${onboarding.childAge}
+ILLNESS: ${onboarding.illnessTypes.join(', ')}
+CHILD ENERGY: ${onboarding.childEnergyLevel}
+PARENT ENERGY: ${onboarding.parentEnergyLevel}
+MEDICATIONS: ${medicationSummary}
+CURRENT TIME: ${currentTime}
+
+INCIDENT TYPE: ${incident}
+${incidentDescription ? `PARENT'S DESCRIPTION: "${incidentDescription}"` : ''}
+
+CURRENT PLAN (pending items):
+${existingPlanSummary}
+
+Based on this incident, generate an updated care plan for the rest of the day. Adjust activities to be appropriate given what just happened. If the child's condition worsened, make the plan gentler with more rest. If they're feeling better, allow slightly more active things.
+
+Respond with ONLY a JSON array like:
+[{"type":"rest","title":"...","description":"...","time":"HH:mm","tags":["..."],"isGentle":true}]`;
+
+  try {
+    const response = await fetch("https://api.minimax.io/v1/text/chatcompletion_v2", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: "MiniMax-M1",
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: userPrompt },
+        ],
+        temperature: 0.7,
+        max_tokens: 2000,
+      }),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error("MiniMax API error:", response.status, errorText);
+      return generatePlanLocal(input);
+    }
+
+    const data = await response.json();
+    const content = data.choices?.[0]?.message?.content;
+
+    if (!content) {
+      console.error("MiniMax returned empty content");
+      return generatePlanLocal(input);
+    }
+
+    const jsonMatch = content.match(/\[[\s\S]*\]/);
+    if (!jsonMatch) {
+      console.error("Could not parse JSON array from MiniMax response:", content.substring(0, 200));
+      return generatePlanLocal(input);
+    }
+
+    const rawItems = JSON.parse(jsonMatch[0]);
+
+    const plan: PlanItem[] = rawItems.map((item: any) => ({
+      id: randomUUID(),
+      type: ["activity", "medication", "meal", "rest"].includes(item.type) ? item.type : "activity",
+      title: String(item.title || "Activity"),
+      description: String(item.description || ""),
+      time: String(item.time || currentTime),
+      emoji: item.type || "activity",
+      tags: Array.isArray(item.tags) ? item.tags.map(String) : [],
+      status: "pending" as const,
+      isGentle: Boolean(item.isGentle),
+    }));
+
+    plan.sort((a, b) => a.time.localeCompare(b.time));
+
+    if (plan.length === 0) {
+      console.warn("MiniMax returned 0 items, falling back to local generation");
+      return generatePlanLocal(input);
+    }
+
+    return plan;
+  } catch (error) {
+    console.error("MiniMax API call failed:", error);
+    return generatePlanLocal(input);
+  }
+}
+
 
 export async function registerRoutes(
   httpServer: Server,
@@ -193,7 +303,14 @@ export async function registerRoutes(
   app.post(api.plan.generate.path, async (req, res) => {
     try {
       const input = api.plan.generate.input.parse(req.body);
-      const plan = generatePlan(input);
+      
+      let plan: PlanItem[];
+      
+      if (input.incident) {
+        plan = await modifyPlanWithAI(input);
+      } else {
+        plan = generatePlanLocal(input);
+      }
       
       await storage.createPlan(plan);
       
@@ -205,7 +322,8 @@ export async function registerRoutes(
           field: err.errors[0].path.join('.'),
         });
       }
-      throw err;
+      console.error("Plan generation error:", err);
+      return res.status(500).json({ message: "Failed to generate plan" });
     }
   });
 

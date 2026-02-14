@@ -29,6 +29,8 @@ export const api = {
         medications: z.array(medicationSchema).optional(),
         currentTime: z.string(),
         incident: z.enum(["Fever spike", "Threw up", "Energy crashed", "Feeling better", "Won't eat/drink"]).optional(),
+        incidentDescription: z.string().optional(),
+        existingPlan: z.array(planItemSchema).optional(),
       }),
       responses: {
         200: z.array(planItemSchema),
