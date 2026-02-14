@@ -8,118 +8,8 @@ import {
   PlanItem, 
   ILLNESS_TYPES, 
   ENERGY_LEVELS,
-  INCIDENT_TYPES,
-  type IncidentType,
-  type VoiceTranscriptionResponse
 } from "@shared/schema";
 import { randomUUID } from "crypto";
-import multer from "multer";
-import FormData from "form-data";
-
-const upload = multer({ 
-  storage: multer.memoryStorage(),
-  limits: { fileSize: 10 * 1024 * 1024 }
-});
-
-function detectIncidentFromText(text: string): { incident: IncidentType | null; confidence: number } {
-  const lower = text.toLowerCase();
-
-  const patterns: { incident: IncidentType; keywords: string[]; weight: number }[] = [
-    { 
-      incident: "Fever spike", 
-      keywords: ["fever", "temperature", "hot", "burning up", "thermometer", "degrees", "temp spike", "high temp", "fever spike"],
-      weight: 1 
-    },
-    { 
-      incident: "Threw up", 
-      keywords: ["threw up", "vomit", "vomiting", "throw up", "throwing up", "puked", "puke", "sick to stomach", "nauseous", "nausea"],
-      weight: 1 
-    },
-    { 
-      incident: "Energy crashed", 
-      keywords: ["tired", "exhausted", "no energy", "energy crashed", "crash", "lethargic", "sleepy", "can't move", "wiped out", "zonked", "sluggish", "drained"],
-      weight: 1 
-    },
-    { 
-      incident: "Feeling better", 
-      keywords: ["feeling better", "better now", "improved", "getting better", "perked up", "more energy", "seems good", "doing well", "bouncing back", "recovering"],
-      weight: 1 
-    },
-    { 
-      incident: "Won't eat/drink", 
-      keywords: ["won't eat", "won't drink", "not eating", "not drinking", "refuses food", "refuses water", "no appetite", "can't eat", "doesn't want food", "won't take anything"],
-      weight: 1 
-    },
-  ];
-
-  let bestMatch: { incident: IncidentType; score: number } | null = null;
-
-  for (const pattern of patterns) {
-    let score = 0;
-    for (const keyword of pattern.keywords) {
-      if (lower.includes(keyword)) {
-        score += keyword.split(' ').length;
-      }
-    }
-    if (score > 0 && (!bestMatch || score > bestMatch.score)) {
-      bestMatch = { incident: pattern.incident, score };
-    }
-  }
-
-  if (bestMatch) {
-    const confidence = Math.min(bestMatch.score / 3, 1);
-    return { incident: bestMatch.incident, confidence };
-  }
-
-  return { incident: null, confidence: 0 };
-}
-
-async function transcribeWithMinimax(audioBuffer: Buffer, mimeType: string): Promise<string> {
-  const apiKey = process.env.MINIMAX_API_KEY;
-  const groupId = process.env.MINIMAX_GROUP_ID;
-
-  if (!apiKey || !groupId) {
-    throw new Error("MINIMAX_API_KEY and MINIMAX_GROUP_ID must be configured");
-  }
-
-  const formData = new FormData();
-  
-  const ext = mimeType.includes('wav') ? 'wav' : 
-              mimeType.includes('mp3') ? 'mp3' : 
-              mimeType.includes('ogg') ? 'ogg' :
-              mimeType.includes('webm') ? 'webm' : 'wav';
-  
-  formData.append('file', audioBuffer, {
-    filename: `recording.${ext}`,
-    contentType: mimeType,
-  });
-
-  const response = await fetch(
-    `https://api.minimax.chat/v1/audio/asr?GroupId=${groupId}`,
-    {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${apiKey}`,
-        ...formData.getHeaders(),
-      },
-      body: formData as any,
-    }
-  );
-
-  if (!response.ok) {
-    const errorText = await response.text();
-    console.error("MiniMax ASR error:", response.status, errorText);
-    throw new Error(`MiniMax API error: ${response.status}`);
-  }
-
-  const result = await response.json() as any;
-  
-  if (result.base_resp && result.base_resp.status_code !== 0) {
-    throw new Error(`MiniMax API error: ${result.base_resp.status_msg || 'Unknown error'}`);
-  }
-  
-  return result.text || result.result?.text || "";
-}
 
 // --- Logic for Day Plan Generation ---
 
@@ -297,37 +187,6 @@ export async function registerRoutes(
   httpServer: Server,
   app: Express
 ): Promise<Server> {
-
-  app.post(api.voice.transcribe.path, upload.single('audio'), async (req, res) => {
-    try {
-      if (!req.file) {
-        return res.status(400).json({ message: "No audio file provided" });
-      }
-
-      const mimeType = req.file.mimetype || 'audio/webm';
-      
-      let transcription: string;
-      try {
-        transcription = await transcribeWithMinimax(req.file.buffer, mimeType);
-      } catch (err: any) {
-        console.error("Transcription error:", err.message);
-        return res.status(500).json({ message: `Transcription failed: ${err.message}` });
-      }
-
-      const { incident, confidence } = detectIncidentFromText(transcription);
-
-      const response: VoiceTranscriptionResponse = {
-        transcription,
-        detectedIncident: incident,
-        confidence,
-      };
-
-      res.json(response);
-    } catch (err: any) {
-      console.error("Voice transcribe error:", err);
-      res.status(500).json({ message: err.message || "Internal server error" });
-    }
-  });
 
   app.post(api.plan.generate.path, async (req, res) => {
     try {

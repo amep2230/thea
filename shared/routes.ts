@@ -20,21 +20,6 @@ export const errorSchemas = {
 };
 
 export const api = {
-  voice: {
-    transcribe: {
-      method: 'POST' as const,
-      path: '/api/voice/transcribe' as const,
-      responses: {
-        200: z.object({
-          transcription: z.string(),
-          detectedIncident: z.enum(["Fever spike", "Threw up", "Energy crashed", "Feeling better", "Won't eat/drink"]).nullable(),
-          confidence: z.number(),
-        }),
-        400: errorSchemas.validation,
-        500: errorSchemas.internal,
-      },
-    },
-  },
   plan: {
     generate: {
       method: 'POST' as const,

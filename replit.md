@@ -16,20 +16,15 @@ Mobile-first web app helping parents manage their child's sick days. Guides them
 ## Key Features
 - Day plan generation based on child energy level and illness
 - Incident reporting ("Something changed" FAB) with plan regeneration
-- **Voice-to-Action**: Record voice describing incident, transcribed via MiniMax ASR API, auto-detects incident type with sparkle animation feedback
+- **Voice-to-Action**: Uses browser Web Speech API for voice recognition, auto-detects incident type with sparkle animation feedback (no external API needed)
 
 ## API Routes
 - `POST /api/plan/generate` - Generate day plan from onboarding data
 - `PATCH /api/plan/:id` - Update plan item status (done/skip)
-- `POST /api/voice/transcribe` - Voice transcription via MiniMax Speech-to-Text (multipart/form-data with `audio` field)
-
-## Environment Variables
-- `MINIMAX_API_KEY` - MiniMax API key for speech-to-text
-- `MINIMAX_GROUP_ID` - MiniMax Group ID for API calls
 
 ## Recent Changes
-- 2026-02-14: Added Voice-to-Action feature to incident reporting
-  - Backend: `/api/voice/transcribe` endpoint with multer + MiniMax ASR proxy
-  - Frontend: `useVoiceRecorder` hook using MediaRecorder API
+- 2026-02-14: Switched Voice-to-Action from MiniMax ASR to browser Web Speech API
+  - Removed `/api/voice/transcribe` backend endpoint (no longer needed)
+  - Frontend: `useVoiceRecorder` hook using Web Speech API (SpeechRecognition)
+  - Incident detection via keyword matching runs entirely client-side
   - CSS: voice-pulse and incident-sparkle animations
-  - Keyword-based incident type detection from transcribed text

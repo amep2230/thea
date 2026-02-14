@@ -1,49 +1,50 @@
-@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=Outfit:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Libre+Baskerville:wght@700&family=Source+Sans+3:wght@300;400;500;600;700&display=swap');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 :root {
-  --font-sans: "DM Sans", sans-serif;
-  --font-display: "Outfit", sans-serif;
+  /* THEA Typography */
+  --font-sans: "Source Sans 3", sans-serif;
+  --font-display: "Libre Baskerville", serif;
 
-  /* Calming, soft palette - Soft Blues, Greens, Warm Neutrals */
-  --background: 210 40% 98%;
-  --foreground: 222 47% 11%;
-  
-  --primary: 174 60% 45%; /* Calming Teal/Green */
+  /* THEA Palette (Converted to HSL for opacity support) */
+  --background: 34 42% 96%;    /* Cream #FAF6F1 */
+  --foreground: 210 29% 24%;   /* Heading #2C3E50 */
+
+  --primary: 118 16% 54%;      /* Sage 400 #7A9E78 */
   --primary-foreground: 0 0% 100%;
-  
-  --secondary: 210 40% 96%;
-  --secondary-foreground: 222 47% 11%;
-  
-  --muted: 210 40% 90%;
-  --muted-foreground: 215 16% 47%;
-  
-  --accent: 35 90% 65%; /* Warm sunny accent */
-  --accent-foreground: 222 47% 11%;
-  
-  --destructive: 0 84% 60%;
-  --destructive-foreground: 0 0% 98%;
 
-  --card: 0 0% 100%;
-  --card-foreground: 222 47% 11%;
-  
-  --border: 214 32% 91%;
-  --input: 214 32% 91%;
-  --ring: 174 60% 45%;
-  
-  --radius: 1rem;
+  --secondary: 201 23% 53%;    /* Dusty Blue 400 #6B8FA3 */
+  --secondary-foreground: 0 0% 100%;
+
+  --muted: 40 8% 93%;          /* Border Light #EEEDEA */
+  --muted-foreground: 212 13% 46%; /* Body text #4A5568 */
+
+  --accent: 28 47% 59%;        /* Activity - Warm Tan #C4956A */
+  --accent-foreground: 210 29% 24%;
+
+  --destructive: 0 25% 69%;    /* Alert - Dusty Rose #C49A9A */
+  --destructive-foreground: 0 0% 100%;
+
+  --card: 30 67% 99%;          /* Card White #FEFCFA */
+  --card-foreground: 218 17% 35%; /* Body #4A5568 */
+
+  --border: 40 8% 87%;         /* Border #E2E0DC */
+  --input: 40 8% 87%;
+  --ring: 118 16% 54%;         /* Sage Green */
+
+  --radius: 0.75rem;           /* 12px - Rounded XL per Design System */
 }
 
 @layer base {
   body {
-    @apply bg-background text-foreground antialiased;
+    @apply bg-background text-card-foreground antialiased;
     font-family: var(--font-sans);
   }
 
-  h1, h2, h3, h4, h5, h6 {
+  h1, h2, h3, h4, .font-display {
     font-family: var(--font-display);
     @apply font-bold tracking-tight text-foreground;
   }
@@ -53,17 +54,23 @@
   .text-balance {
     text-wrap: balance;
   }
-  
+
+  /* Glass card adaptée à la palette Cream */
   .glass-card {
-    @apply bg-white/80 backdrop-blur-md border border-white/20 shadow-lg;
+    @apply bg-white/40 backdrop-blur-md border border-white/20 shadow-sm;
   }
 
   .safe-bottom {
     padding-bottom: env(safe-area-inset-bottom);
   }
+
+  /* Shadow spécifique du Design System THEA */
+  .shadow-thea {
+    box-shadow: 0 1px 4px rgba(44,62,80,0.06), 0 1px 2px rgba(44,62,80,0.04);
+  }
 }
 
-/* Voice Recording Pulse Animation */
+/* Voice Recording Pulse - Updated to Dusty Rose (Destructive) */
 .voice-pulse {
   animation: voice-pulse 1.5s ease-in-out infinite;
 }
@@ -77,7 +84,7 @@
   }
 }
 
-/* AI Sparkle Highlight Animation */
+/* AI Sparkle - Updated to Sage Green (Primary) */
 .incident-sparkle {
   animation: sparkle-glow 1.5s ease-in-out 2;
   position: relative;
@@ -85,34 +92,25 @@
 
 @keyframes sparkle-glow {
   0%, 100% {
-    box-shadow: 0 0 0 0 hsl(var(--primary) / 0),
-                0 0 0 0 hsl(var(--primary) / 0);
-  }
-  25% {
-    box-shadow: 0 0 8px 2px hsl(var(--primary) / 0.3),
-                0 0 20px 4px hsl(var(--primary) / 0.1);
+    box-shadow: 0 0 0 0 hsl(var(--primary) / 0);
   }
   50% {
     box-shadow: 0 0 12px 4px hsl(var(--primary) / 0.4),
                 0 0 30px 8px hsl(var(--primary) / 0.15);
   }
-  75% {
-    box-shadow: 0 0 8px 2px hsl(var(--primary) / 0.3),
-                0 0 20px 4px hsl(var(--primary) / 0.1);
-  }
 }
 
-/* Custom Scrollbar */
+/* Custom Scrollbar - Harmonized with Sage/Cream */
 ::-webkit-scrollbar {
   width: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: transparent;
+  background: hsl(var(--background));
 }
 ::-webkit-scrollbar-thumb {
-  background: hsl(var(--muted-foreground) / 0.3);
+  background: hsl(var(--primary) / 0.2);
   border-radius: 10px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: hsl(var(--muted-foreground) / 0.5);
+  background: hsl(var(--primary) / 0.4);
 }
