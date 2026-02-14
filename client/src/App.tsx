@@ -4,7 +4,7 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import NotFound from "@/pages/not-found";
-import Onboarding from "@/pages/Onboarding";
+import Onboarding from "@/pages/OnboardingNew";
 import Medications from "@/pages/Medications";
 import DayPlan from "@/pages/DayPlan";
 import { useEffect } from "react";

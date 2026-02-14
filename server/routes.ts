@@ -30,7 +30,9 @@ function timeDiff(time1: string, time2: string): number {
 function generatePlan(input: GeneratePlanRequest): PlanItem[] {
   const { onboarding, medications, currentTime, incident } = input;
   const plan: PlanItem[] = [];
-  const endTime = "19:30";
+  
+  const currentHour = parseInt(currentTime.split(':')[0]);
+  const endTime = currentHour >= 19 ? "23:00" : "19:30";
   
   let timeCursor = currentTime;
   
