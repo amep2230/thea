@@ -64,6 +64,10 @@ export default {
           DEFAULT: "#C49A9A", // Dusty Rose (pas de rouge vif !)
           foreground: "#FFFFFF",
         },
+        popover: {
+          DEFAULT: "#FEFCFA", // Card White
+          foreground: "#4A5568", // Body text
+        },
         // ... gardez le reste de vos variables hsl existantes si nécessaire
       },
       boxShadow: {
